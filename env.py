@@ -42,18 +42,10 @@ class PowerCutEnv:
 
     return round(total / demand, 2) if demand > 0 else 0.0
 
-    def reset(self):
-        if not self.zones:
-            self.load_task("medium")
-
-        for z in self.zones:
-            z["power"] = 0
-
-        return {
-            "observation": self.state(),
-            "info": {}
-        }
-
+    return {
+    "observation": self.state(),
+    "info": {}
+}
     def step(self, action: int):
         reward = 0
         done = False
