@@ -1,0 +1,7 @@
+name: smart-powercut
+
+entrypoint: inference.py
+
+environment:
+  file: env.py
+  class: PowerCutEnv
