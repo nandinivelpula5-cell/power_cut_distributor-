@@ -67,7 +67,8 @@ class PowerCutEnv:
         if self.supply >= zone["demand"] and zone["power"] == 0:
             zone["power"] = zone["demand"]
             self.supply -= zone["demand"]
-            reward += zone["priority"] * 10
+            max_priority = 5
+            reward += zone["priority"] / max_priority   
 
         # partial allocation
         elif self.supply > 0 and zone["power"] == 0:
