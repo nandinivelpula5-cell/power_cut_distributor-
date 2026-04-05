@@ -7,12 +7,13 @@ class PowerCutEnv:
         self.supply = 0
         self.zones = []
 
+    # ---------------- TASKS ----------------
     def load_task(self, difficulty="easy"):
         if difficulty == "easy":
             self.supply = 100
             self.zones = [
-                {"name": "Hospital", "demand": 30, "priority": 4, "power": 0},
-                {"name": "Home", "demand": 20, "priority": 2, "power": 0},
+                {"name": "Hospital", "demand": 30, "priority": 5, "power": 0},
+                {"name": "Home", "demand": 20, "priority": 3, "power": 0},
             ]
 
         elif difficulty == "medium":
@@ -24,6 +25,7 @@ class PowerCutEnv:
             ]
 
         elif difficulty == "hard":
+            random.seed(42)  # reproducible
             self.supply = random.randint(50, 100)
             self.zones = [
                 {"name": "Hospital", "demand": random.randint(30, 50), "priority": 5, "power": 0},
@@ -31,57 +33,77 @@ class PowerCutEnv:
                 {"name": "Factory", "demand": random.randint(10, 30), "priority": 1, "power": 0},
             ]
 
+    # ---------------- STATE ----------------
     def state(self) -> Dict:
         return {
             "supply": self.supply,
             "zones": self.zones
         }
-    def get_score(self):
-    total = sum(z["power"] for z in self.zones)
-    demand = sum(z["demand"] for z in self.zones)
 
-    return round(total / demand, 2) if demand > 0 else 0.0
+    # ---------------- RESET ----------------
+    def reset(self):
+        if not self.zones:
+            self.load_task("medium")
 
-    return {
-    "observation": self.state(),
-    "info": {}
-}
+        for z in self.zones:
+            z["power"] = 0
+
+        return {
+            "observation": self.state(),
+            "info": {}
+        }
+
+    # ---------------- STEP ----------------
     def step(self, action: int):
-        reward = 0
+        reward = 0.0
         done = False
 
         if action < 0 or action >= len(self.zones):
             return {
                 "observation": self.state(),
-                "reward": -10,
+                "reward": 0.0,
                 "done": True,
                 "info": {}
             }
 
         zone = self.zones[action]
+        max_priority = 5
 
-        # full allocation
+        # Full allocation
         if self.supply >= zone["demand"] and zone["power"] == 0:
             zone["power"] = zone["demand"]
             self.supply -= zone["demand"]
-            max_priority = 5
-            reward += zone["priority"] / max_priority   
+            reward += zone["priority"] / max_priority  # max 1.0
 
-        # partial allocation
+        # Partial allocation
         elif self.supply > 0 and zone["power"] == 0:
-            zone["power"] = self.supply
-            reward += zone["priority"] * 5
+            allocated = self.supply
+            zone["power"] = allocated
+            reward += (zone["priority"] / max_priority) * 0.5
             self.supply = 0
 
+        # Invalid / repeat action
         else:
-            reward -= 5
+            reward -= 0.2
+
+        # Clamp reward between 0 and 1
+        reward = max(0.0, min(1.0, reward))
 
         done = self.supply <= 0 or all(z["power"] > 0 for z in self.zones)
 
         return {
             "observation": self.state(),
-            "reward": reward,
+            "reward": float(reward),
             "done": done,
             "info": {}
         }
-        
+
+    # ---------------- SCORING ----------------
+    def get_score(self) -> float:
+        total_power = sum(z["power"] for z in self.zones)
+        total_demand = sum(z["demand"] for z in self.zones)
+
+        if total_demand == 0:
+            return 0.0
+
+        return round(total_power / total_demand, 2)
