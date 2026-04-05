@@ -7,16 +7,19 @@ class PowerCutEnv:
         self.total_supply = 0
 
     def reset(self):
-        self.total_supply = 100
+    self.supply = 100
+    self.zones = [
+        {"name": "Hospital", "demand": 40, "priority": 4, "power": 0},
+        {"name": "Residential", "demand": 50, "priority": 2, "power": 0},
+        {"name": "Industrial", "demand": 30, "priority": 1, "power": 0}
+    ]
 
-        self.zones = [
-            {"name": "Hospital", "demand": 40, "priority": 5, "power": 0},
-            {"name": "Residential", "demand": 30, "priority": 3, "power": 0},
-            {"name": "Industry", "demand": 50, "priority": 2, "power": 0},
-            {"name": "School", "demand": 20, "priority": 4, "power": 0},
-        ]
+    return {
+        "observation": self.state(),
+        "info": {}
+    }
 
-        return self._get_state()
+    
 
     def _get_state(self):
         return {
