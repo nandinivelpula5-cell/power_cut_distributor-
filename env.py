@@ -28,18 +28,34 @@ class PowerCutEnv:
         }
 
     def step(self, action):
-        zone = self.zones[action]
+    reward = 0
+    done = False
 
-        if self.total_supply <= 0:
-            return self._get_state(), -10, True
+    if action < 0 or action >= len(self.zones):
+        return {
+            "observation": self.state(),
+            "reward": -10,
+            "done": True,
+            "info": {}
+        }
 
-        supply_given = min(10, self.total_supply)
-        zone["power"] += supply_given
-        self.total_supply -= supply_given
+    zone = self.zones[action]
 
-        # reward logic
-        reward = zone["priority"] * supply_given
+    if self.supply >= zone["demand"] and zone["power"] == 0:
+        zone["power"] = zone["demand"]
+        self.supply -= zone["demand"]
+        reward += zone["priority"] * 10
+    else:
+        reward -= 5
 
+    done = self.supply <= 0 or all(z["power"] > 0 for z in self.zones)
+
+    return {
+        "observation": self.state(),
+        "reward": reward,
+        "done": done,
+        "info": {}
+    }
         done = self.total_supply <= 0
 
         return self._get_state(), reward, done
