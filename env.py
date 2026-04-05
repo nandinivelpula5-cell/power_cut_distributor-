@@ -36,6 +36,11 @@ class PowerCutEnv:
             "supply": self.supply,
             "zones": self.zones
         }
+    def get_score(self):
+    total = sum(z["power"] for z in self.zones)
+    demand = sum(z["demand"] for z in self.zones)
+
+    return round(total / demand, 2) if demand > 0 else 0.0
 
     def reset(self):
         if not self.zones:
@@ -87,3 +92,4 @@ class PowerCutEnv:
             "done": done,
             "info": {}
         }
+        
